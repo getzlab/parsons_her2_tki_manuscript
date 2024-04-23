@@ -14,28 +14,28 @@ library(rstatix)
 
 ## Load data
 ```{r}
-sample_sheet_paired <- read_delim('../results/2024-02-05_cohort-sheets/paired_sample_cohort_sheet.txt',
+sample_sheet_paired <- read_delim('data/paired_sample_cohort_sheet.txt',
                                   show_col_types = FALSE)
 
-sample_sheet_unpaired <- read_delim('../results/2024-02-05_cohort-sheets/unpaired_sample_cohort_sheet.txt',
+sample_sheet_unpaired <- read_delim('data/unpaired_sample_cohort_sheet.txt',
                                   show_col_types = FALSE)
 
-patient_sheet_paired <- read_delim('../results/2024-02-05_cohort-sheets/paired_participant_cohort_sheet.txt',
+patient_sheet_paired <- read_delim('data/paired_participant_cohort_sheet.txt',
                                    show_col_types = FALSE)
 
-patient_sheet_unpaired <- read_delim('../results/2024-02-05_cohort-sheets/unpaired_participant_cohort_sheet.txt',
+patient_sheet_unpaired <- read_delim('data/unpaired_participant_cohort_sheet.txt',
                                      show_col_types = FALSE)
 
-cnas_paired <- read_delim('../results/2024-01-18_gene-cna-calls/cnas_paired_all_annot_ptlevel.tsv',
+cnas_paired <- read_delim('data/cnas_paired_all_annot_ptlevel.tsv',
                           show_col_types = FALSE)
 
-cnas_unpaired <- read_delim('../results/2023-09-28_gene-cna-calls/cnas_unpaired_all_annot_ptlevel.tsv',
+cnas_unpaired <- read_delim('data/cnas_unpaired_all_annot_ptlevel.tsv',
                             show_col_types = FALSE)
 
-maf_paired <- read_delim('../results/2024-02-14_mutations/all_mut_ccfs_maf_bl_geneLists_evidenceLevels.txt',
+maf_paired <- read_delim('data/paired.maf',
                          show_col_types = FALSE)
 
-maf_unpaired <- read_delim('../results/2024-02-12_mutations/all_mut_ccfs_maf_annotated_geneLists_evidenceLevels_unpaired.txt',
+maf_unpaired <- read_delim('data/unpaired.maf',
                          show_col_types = FALSE)
 
 esr1_mut_pts <- maf_paired %>%
@@ -113,9 +113,6 @@ paired_cnap_plot <- ggpaired(erbb2_tmp_per_pt %>% drop_na, cond1 = 'Pre', cond2 
 paired_cnap_plot <- ggpar(paired_cnap_plot, ylab = bquote(italic('ERBB2')~'CNAP'))
 
 paired_cnap_plot
-
-# ggsave(paired_cnap_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired.png',
-#        width = 3, height = 3, units = 'in', dpi = 450)
 ```
 
 Does ERBB2 CNAP for a sample correlate with that sample's purity/tumor fraction?
@@ -145,9 +142,6 @@ resistance_type_cnap_plot <- ggpar(resistance_type_cnap_plot,
                                    ylab = bquote('Pre-TKI'~italic('ERBB2')~'CNAP'))
 
 resistance_type_cnap_plot
-
-# ggsave(resistance_type_cnap_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_resistance_type_pre.png',
-#        width = 4, height = 4.5, units = 'in', dpi = 450)
 ```
 
 # Figure 2D: ERBB2 CNAP by HR status and ESR1 mutation status
@@ -178,9 +172,6 @@ hrstatus_esrmut_combined_plot <- ggpar(hrstatus_esrmut_combined_plot,
 hrstatus_esrmut_combined_plot$layers[[3]]$aes_params$textsize <- 4
 
 hrstatus_esrmut_combined_plot
-
-# ggsave(hrstatus_esrmut_combined_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_and_unpaired_by_ESR1_and_HR.png',
-#        width = 6, height = 5, units = 'in', dpi = 450)
 ```
 
 # Figure 2B-D, combined
@@ -192,9 +183,6 @@ manuscript_panels <- ggarrange(paired_cnap_plot,
                          widths = c(1,1,2))
 
 manuscript_panels
-
-# ggsave(manuscript_panels, filename = '../../results/2024-03-22_cna-plots/Fig2_BCD.pdf',
-#        width = 14, height = 4.2, units = 'in')
 ```
 
 # Supplementary Figure 1: ERBB2 CNAP by HR status
@@ -218,9 +206,6 @@ hrstatus_plot <- erbb2_tmp_per_pt %>%
 hrstatus_plot <- ggpar(hrstatus_plot, ylab = bquote(italic('ERBB2')~'CNAP'))
 
 hrstatus_plot
-
-# ggsave(hrstatus_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_hrstatus.png',
-#        width = 5, height = 3, units = 'in', dpi = 450)
 ```
 
 # Supplementary Figure 2: ERBB2 CNAP by ESR1 mutation status
@@ -243,9 +228,6 @@ esrmut_plot <- ggpar(esrmut_plot,
                      ylab = bquote(italic('ERBB2')~'CNAP'))
 
 esrmut_plot
-
-# ggsave(esrmut_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_ESR1.png',
-#        width = 5, height = 3, units = 'in', dpi = 450)
 ```
 
 ```{r}

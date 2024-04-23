@@ -12,26 +12,22 @@ library(rstatix)
 ```
 
 ```{r}
-# output_dir <- '../../results/2024-02-12_pathway-and-signature-plots/'
-```
-
-```{r}
-patient_sheet_paired <- read_delim('../results/2024-02-05_cohort-sheets/paired_participant_cohort_sheet.txt', show_col_types = FALSE) %>% 
+patient_sheet_paired <- read_delim('data/paired_participant_cohort_sheet.txt', show_col_types = FALSE) %>% 
   mutate(Cohort = 'Paired')
 
-patient_sheet_unpaired <- read_delim('../results/2024-02-05_cohort-sheets/unpaired_participant_cohort_sheet.txt', show_col_types = FALSE)
+patient_sheet_unpaired <- read_delim('data/unpaired_participant_cohort_sheet.txt', show_col_types = FALSE)
 
 patient_sheet <- bind_rows(patient_sheet_paired, patient_sheet_unpaired) %>% 
   mutate(harmonized_tki_duration = ifelse(str_equal(Cohort, 'Paired'), sampled_tki_duration, earliest_tki_duration),
          harmonized_os_tki_dfd = ifelse(str_equal(Cohort, 'Paired'), os_sampled_tki_dfd, os_earliest_tki_dfd))
 
-maf_paired <- read_delim('../results/2024-02-14_mutations/all_mut_ccfs_maf_bl_geneLists_evidenceLevels.txt',
+maf_paired <- read_delim('data/paired.maf',
                          show_col_types = FALSE,
                          col_types = cols(level_of_evidence = col_character())) %>% 
   filter((!str_equal(trajectory, 'low_ccf')) & (!is.na(gene_set)) & (!is.na(level_of_evidence))) %>% 
   distinct(Patient_ID, unique_mut_id, .keep_all = TRUE)
 
-maf_unpaired <- read_delim('../results/2024-02-12_mutations/all_mut_ccfs_maf_annotated_geneLists_evidenceLevels_unpaired.txt',
+maf_unpaired <- read_delim('data/unpaired.maf',
                            show_col_types = FALSE,
                            col_types = cols(level_of_evidence = col_character())) %>% 
   filter(postDP_ccf_mode >= 0.1 & (!is.na(gene_set)) & (!is.na(level_of_evidence))) %>% 
@@ -89,11 +85,6 @@ plot_mut_freq <- ggbarplot(to_plot_muts, 'gene_set', 'pct_pts_mut',
          fill = guide_legend(reverse = TRUE))
 
 plot_mut_freq
-
-# ggsave(plot_mut_freq, filename = paste0(output_dir, 'mut_freq_pathways.2024-02-14.png'),
-#        width = 6, height = 8, units = 'in', dpi = 450)
-# ggsave(plot_mut_freq, filename = paste0(output_dir, 'mut_freq_pathways.2024-02-14.pdf'),
-#        width = 6, height = 8, units = 'in')
 ```
 
 # Compare frequencies
