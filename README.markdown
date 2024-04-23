@@ -1,12 +1,11 @@
 
 This repository contains supplementary code for the Parsons et al. manuscript:
 
-_Genomic mechanisms of resistance to tyrosine kinase inhibitors in HER2 amplified breast cancer. Parsons et al. 2024_
+_Genomic mechanisms of resistance to tyrosine kinase inhibitors in HER2 amplified breast cancer._ Parsons et al. 2024
 
 The Jupyter and RMarkdown notebooks in this repository generate the figures shown in the manuscript. 
 
 For questions about the code in this repository, please reach out to David Merrell (merrell@broadinstitute.org).
-
 
 # How to reproduce manuscript figures
 
@@ -16,7 +15,7 @@ For questions about the code in this repository, please reach out to David Merre
 
 For the remainder of this document, we assume you've `cd`'d into this directory:
 
-`$ cd parsons_her2_tki_manuscript.git`
+`$ cd parsons_her2_tki_manuscript/`
 
 ## Install dependencies
 
@@ -37,14 +36,19 @@ Download the tarball `parsons_her2_tki_data.tar.gz` and unpack it in this direct
 At this point, there should be a subdirectory called `data` containing several files:
 ```
 $ ls data/
-all_mut_ccfs_maf_bl_geneLists_evidenceLevels.pkl
-cnas_paired_all_annot_ptlevel.tsv
+TODO LIST FILES
 [...]
 ```
 
 You are now ready to run the notebooks and reproduce the figures.
 
 ## Run the notebooks
+
+Here we list the figures and the notebooks that generate them.
+
+[See this information about running Jupyter notebooks.](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/execute.html)
+
+[See this information about running RMarkdown notebooks.](https://bookdown.org/yihui/rmarkdown/notebook.html)
 
 ### Figure 1
 - 1A: This panel was generated using Microsoft PowerPoint (**TODO: cite BioRender for images?**)
@@ -61,7 +65,7 @@ You are now ready to run the notebooks and reproduce the figures.
 
 ### Figure 4
 - 4A: [comuts_brain_mets.ipynb](comuts_brain_mets.ipynb)
-- 4B: This panel was generated using PathwayMapper (**TODO: cite PathwayMapper?**)
+- 4B: This panel was generated using PathwayMapper[^1] 
 
 ### Supplementary Figure 1
 - [copy_number.Rmd](copy_number.Rmd)
@@ -75,6 +79,8 @@ You are now ready to run the notebooks and reproduce the figures.
 ### Supplementary Figure 4
 - [comuts_brain_mets.ipynb](comuts_brain_mets.ipynb)
 
-## Licensing
+# Licensing
 
 See LICENSE.txt for details.
+
+[^1]: Istemi Bahceci, Ugur Dogrusoz, Konnor C La, Özgün Babur, Jianjiong Gao, Nikolaus Schultz, PathwayMapper: a collaborative visual web editor for cancer pathways and genomic data, Bioinformatics, Volume 33, Issue 14, July 2017, Pages 2238–2240, https://doi.org/10.1093/bioinformatics/btx149
