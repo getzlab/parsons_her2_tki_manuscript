@@ -27,7 +27,7 @@ We recommend installing [Miniconda](https://docs.anaconda.com/free/miniconda/min
 
 Data for this repository is stored on Zenodo:
 
-TODO ADD ZENODO REPOSITORY URL
+https://doi.org/10.5281/zenodo.11053092
 
 Download the tarball `parsons_her2_tki_data.tar.gz` and unpack it in this directory:
 
@@ -36,7 +36,8 @@ Download the tarball `parsons_her2_tki_data.tar.gz` and unpack it in this direct
 At this point, there should be a subdirectory called `data` containing several files:
 ```
 $ ls data/
-TODO LIST FILES
+H_matrix.tsv
+ONC_ID_to_Manuscript_ID_mapping_paired.txt
 [...]
 ```
 
