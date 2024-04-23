@@ -21,7 +21,7 @@ For questions about the code in this repository, please reach out to David Merre
 - 2B-D: [copy_number.Rmd](copy_number.Rmd)
 
 ### Figure 3
-- 3A: [swimmers.ipynb](swimmers.ipynb)
+- 3A: [swimmer.ipynb](swimmer.ipynb)
 - 3B-G: These panels were generated in Adobe Illustrator using the outputs of PhylogicNDT, as well as sample and treatment data for the selected participants.
 
 ### Figure 4

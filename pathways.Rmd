@@ -1,10 +1,8 @@
 ---
-title: "Mutations in key genes, pathway alterations, and signatures - cohort comparisons and summary plots"
+title: "Figure 1C: Pathway point mutation frequency comparison"
 output: html_notebook
 ---
 
-This notebook exists to pull together tabulations and plots of clinical and
-genomic variables for the comparisons Kate outlined in a 07/13/2023 email.
 ```{r}
 library(tidyverse)
 library(janitor)
@@ -13,26 +11,26 @@ library(rstatix)
 ```
 
 ```{r}
-output_dir <- '../../results/2024-02-12_pathway-and-signature-plots/'
+# output_dir <- '../../results/2024-02-12_pathway-and-signature-plots/'
 ```
 
 ```{r}
-patient_sheet_paired <- read_delim('../../results/2024-02-05_cohort-sheets/paired_participant_cohort_sheet.txt', show_col_types = FALSE) %>% 
+patient_sheet_paired <- read_delim('../results/2024-02-05_cohort-sheets/paired_participant_cohort_sheet.txt', show_col_types = FALSE) %>% 
   mutate(Cohort = 'Paired')
 
-patient_sheet_unpaired <- read_delim('../../results/2024-02-05_cohort-sheets/unpaired_participant_cohort_sheet.txt', show_col_types = FALSE)
+patient_sheet_unpaired <- read_delim('../results/2024-02-05_cohort-sheets/unpaired_participant_cohort_sheet.txt', show_col_types = FALSE)
 
 patient_sheet <- bind_rows(patient_sheet_paired, patient_sheet_unpaired) %>% 
   mutate(harmonized_tki_duration = ifelse(str_equal(Cohort, 'Paired'), sampled_tki_duration, earliest_tki_duration),
          harmonized_os_tki_dfd = ifelse(str_equal(Cohort, 'Paired'), os_sampled_tki_dfd, os_earliest_tki_dfd))
 
-maf_paired <- read_delim('../../results/2024-02-14_mutations/all_mut_ccfs_maf_bl_geneLists_evidenceLevels.txt',
+maf_paired <- read_delim('../results/2024-02-14_mutations/all_mut_ccfs_maf_bl_geneLists_evidenceLevels.txt',
                          show_col_types = FALSE,
                          col_types = cols(level_of_evidence = col_character())) %>% 
   filter((!str_equal(trajectory, 'low_ccf')) & (!is.na(gene_set)) & (!is.na(level_of_evidence))) %>% 
   distinct(Patient_ID, unique_mut_id, .keep_all = TRUE)
 
-maf_unpaired <- read_delim('../../results/2024-02-12_mutations/all_mut_ccfs_maf_annotated_geneLists_evidenceLevels_unpaired.txt',
+maf_unpaired <- read_delim('../results/2024-02-12_mutations/all_mut_ccfs_maf_annotated_geneLists_evidenceLevels_unpaired.txt',
                            show_col_types = FALSE,
                            col_types = cols(level_of_evidence = col_character())) %>% 
   filter(postDP_ccf_mode >= 0.1 & (!is.na(gene_set)) & (!is.na(level_of_evidence))) %>% 
@@ -40,131 +38,12 @@ maf_unpaired <- read_delim('../../results/2024-02-12_mutations/all_mut_ccfs_maf_
 
 maf_combined <- bind_rows(maf_paired, maf_unpaired) %>% 
   mutate(gene_set = ifelse(str_equal(gene_set, 'ESR1'), 'ESR1 + regulators', gene_set)) %>% 
-  left_join(patient_sheet %>% select(participant_id, Cohort), by = c('Patient_ID' = 'participant_id'))
-
-clone_H <- read_delim('../../merrell/signature_analyses/2023-09-06/clones/H_matrix.tsv',
-                        show_col_types = FALSE)
-
-patient_H <- read_delim('../../merrell/signature_analyses/2023-09-06/patients/H_matrix.tsv',
-                        show_col_types = FALSE)
+  left_join(patient_sheet %>% select(participant_id, Cohort, resistance_type), by = c('Patient_ID' = 'participant_id'))
 ```
 
-Paired cohort: # pts with mutations in pathways
-```{r}
-maf_paired %>% distinct(Patient_ID, gene_set) %>% 
-  count(gene_set) %>%
-  dplyr::rename(n_pts_mut = n) %>% 
-  mutate(pct_pts_mut = round(100 * n_pts_mut / 26)) %>% 
-  arrange(desc(pct_pts_mut))
-```
-
-Paired vs. pre and paired vs. post cohorts: # pts with mutations in pathways
-```{r}
-maf_combined %>% distinct(Patient_ID, Cohort, gene_set) %>%
-  mutate(Cohort = case_when(
-    str_equal(Cohort, 'Exposed') ~ 'Post-TKI',
-    str_equal(Cohort, 'Non-exposed') ~ 'Pre-TKI',
-    TRUE ~ Cohort)) %>% 
-  count(Cohort, gene_set) %>%
-  dplyr::rename(n_pts_mut = n) %>% 
-  mutate(n_pts_not_mut = case_when(
-    str_equal(Cohort, 'Paired') ~ 26 - n_pts_mut,
-    str_equal(Cohort, 'Post-TKI') ~ 30 - n_pts_mut,
-    str_equal(Cohort, 'Pre-TKI') ~ 55 - n_pts_mut
-  )) %>% 
-  mutate(pct_pts_mut = round(100 * n_pts_mut / (n_pts_mut + n_pts_not_mut))) %>% 
-  arrange(Cohort, desc(pct_pts_mut))
-```
-
-
-Paired vs. pre and paired vs. post cohorts: # pts with mutations in key genes
-```{r}
-maf_combined %>% distinct(Patient_ID, Cohort, Hugo_Symbol) %>%
-  # filter(Hugo_Symbol %in% c('PIK3CA', 'ERBB2', 'ESR1', 'FGFR2', 'FGFR4')) %>% 
-  mutate(Cohort = case_when(
-    str_equal(Cohort, 'Exposed') ~ 'Post-TKI',
-    str_equal(Cohort, 'Non-exposed') ~ 'Pre-TKI',
-    TRUE ~ Cohort)) %>% 
-  count(Cohort, Hugo_Symbol) %>%
-  dplyr::rename(n_pts_mut = n) %>% 
-  mutate(n_pts_not_mut = case_when(
-    str_equal(Cohort, 'Paired') ~ 26 - n_pts_mut,
-    str_equal(Cohort, 'Post-TKI') ~ 30 - n_pts_mut,
-    str_equal(Cohort, 'Pre-TKI') ~ 55 - n_pts_mut
-  )) %>% 
-  mutate(pct_pts_mut = round(100 * n_pts_mut / (n_pts_mut + n_pts_not_mut))) %>% 
-  arrange(desc(pct_pts_mut))
-```
-
-
-Paired cohort only: number of participants/pathways mutated for each clonal trajectory
-```{r}
-labels <- c('truncal' = 'Truncal', 'stable_mixed' = 'Stable', 'growing' = 'Growing', 'shrinking' = 'Shrinking')
-
-n_pathway_per_trajectory <- maf_paired %>%
-  group_by(Patient_ID, trajectory) %>%
-  summarize(n_pathways = n_distinct(gene_set), .groups = 'drop') %>%
-  complete(Patient_ID, trajectory, fill = list(n_pathways = 0)) %>% 
-  right_join(patient_sheet_paired %>% select(participant_id, resistance_type),
-            by = c('Patient_ID' = 'participant_id')) %>% 
-  mutate(trajectory = factor(labels[as.character(trajectory)],
-                             levels = c('Truncal', 'Growing', 'Stable', 'Shrinking')),
-         resistance_type = factor(resistance_type, levels = c('Intrinsic', 'Acquired')))
-
-n_participants_per_trajectory <- maf_paired %>% 
-  left_join(patient_sheet_paired %>% select(participant_id, resistance_type),
-            by = c('Patient_ID' = 'participant_id')) %>% 
-  group_by(gene_set, trajectory, resistance_type) %>%
-  summarize(n_participants = n_distinct(Patient_ID), .groups = 'drop') %>%
-  complete(gene_set, trajectory, resistance_type, fill = list(n_participants = 0)) %>% 
-  mutate(trajectory = factor(labels[as.character(trajectory)],
-                             levels = c('Truncal', 'Growing', 'Stable', 'Shrinking')),
-         resistance_type = factor(resistance_type, levels = c('Intrinsic', 'Acquired')))
-  
-p_pathway_trajectory <- ggboxplot(n_pathway_per_trajectory,
-          x = 'resistance_type',
-          y = 'n_pathways',
-          xlab = 'Resistance type',
-          ylab = 'Number of mutated pathways\n(per participant)',
-          size = 0.5,
-          add = 'dotplot',
-          outlier.shape = NA,
-          palette = c('#D55E00', '#009E73'),
-          facet.by = 'trajectory',
-          nrow = 1) +
-  theme(legend.position = 'none') +
-  stat_compare_means(label = 'p')
-
-p_participant_trajectory <- ggboxplot(n_participants_per_trajectory,
-          x = 'resistance_type',
-          y = 'n_participants',
-          xlab = 'Resistance type',
-          ylab = 'Number of participants with\nmutated pathways',
-          size = 0.5,
-          add = 'dotplot',
-          outlier.shape = NA,
-          palette = c('#D55E00', '#009E73'),
-          facet.by = 'trajectory',
-          nrow = 1) +
-  theme(legend.position = 'none') +
-  stat_compare_means(label = 'p')
-
-ggarrange(p_pathway_trajectory, p_participant_trajectory, nrow = 2) %>%
-  ggsave(filename = paste0(output_dir, 'pathway_trajectory_counts.2024-02-14.png'),
-         width = 8, height = 6, units = 'in', dpi = 450)
-```
-
-Double checking statistical comparisons
-```{r}
-n_pathway_per_trajectory %>% group_by(trajectory) %>% wilcox_test(n_pathways ~ resistance_type)
-
-n_participants_per_trajectory %>% group_by(trajectory) %>% wilcox_test(n_participants ~ resistance_type)
-```
-
-Pathway mutation frequency: acquired, intrinsic, exposed, non-exposed
+Pathway mutation frequency: acquired, intrinsic, pre-TKI, post-TKI
 ```{r}
 to_plot_muts <- maf_combined %>%
-  left_join(patient_sheet, by = c('Patient_ID' = 'participant_id')) %>% 
   mutate(Cohort = factor(case_when(
     str_equal(Cohort, 'Paired') ~ str_c('Paired ', resistance_type),
     str_equal(Cohort, 'Exposed') ~ 'Post-TKI',
@@ -209,13 +88,13 @@ plot_mut_freq <- ggbarplot(to_plot_muts, 'gene_set', 'pct_pts_mut',
 
 plot_mut_freq
 
-ggsave(plot_mut_freq, filename = paste0(output_dir, 'mut_freq_pathways.2024-02-14.png'),
-       width = 6, height = 8, units = 'in', dpi = 450)
-ggsave(plot_mut_freq, filename = paste0(output_dir, 'mut_freq_pathways.2024-02-14.pdf'),
-       width = 6, height = 8, units = 'in')
+# ggsave(plot_mut_freq, filename = paste0(output_dir, 'mut_freq_pathways.2024-02-14.png'),
+#        width = 6, height = 8, units = 'in', dpi = 450)
+# ggsave(plot_mut_freq, filename = paste0(output_dir, 'mut_freq_pathways.2024-02-14.pdf'),
+#        width = 6, height = 8, units = 'in')
 ```
 
-Want to test intrinsic vs. acquired and exposed vs. non-exposed with Fisher exact
+Intrinsic vs. acquired and pre-TKI vs. post-TKI with Fisher's Exact test
 ```{r}
 to_fisher <- to_plot_muts %>% 
   select(-pct_pts_mut, -order_sum) %>% 
@@ -248,35 +127,4 @@ fisher_results <- bind_rows(
 )
 
 fisher_results %>% arrange(p)
-```
-
-Signature activity: acquired, intrinsic, exposed, non-exposed
-```{r}
-to_plot_sigs <- patient_H %>% 
-  dplyr::rename(`SBS1/5 (clock-like)` = `S1-SBS6`,
-         `SBS17b (Capecitabine)` = `S2-SBS17b`,
-         `SBS2/13 (APOBEC)` = `S3-SBS2`,
-         `SBS26/54 (MMRd/seq. artifact)` = `S4-SBS54`) %>% 
-  left_join(patient_sheet, by = c('sample' = 'participant_id')) %>% 
-  mutate(Cohort = factor(ifelse(
-    str_equal(Cohort, 'Paired'), resistance_type, Cohort
-  ), levels = c('Exposed', 'Non-exposed', 'Acquired', 'Intrinsic'))) %>% 
-  select(sample, Cohort, contains('SBS')) %>% 
-  pivot_longer(cols = contains('SBS')) %>% 
-  group_by(sample) %>%
-  mutate(value_norm = value / sum(value))
-
-plot_sig_activity <- ggboxplot(to_plot_sigs, x = 'Cohort', y = 'value_norm',
-          facet.by = 'name', ylab = 'Signature activity') +
-    stat_compare_means(method = 'wilcox.test', label = 'p.signif',
-                     comparisons = list(c('Intrinsic', 'Acquired'),
-                                        c('Exposed', 'Non-exposed'))) +
-  scale_y_continuous(breaks = seq(0, 1, by = 0.25),
-                     limits = c(0, 1.25)) +
-  theme_bw()
-
-ggsave(plot_sig_activity, filename = paste0(output_dir, 'sig_activity.2024-02-14.png'),
-       width = 7, height = 5, units = 'in', dpi = 450)
-
-plot_sig_activity
 ```
