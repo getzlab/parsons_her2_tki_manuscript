@@ -22,7 +22,7 @@ For questions about the code in this repository, please reach out to David Merre
 
 ### Figure 3
 - 3A: [swimmer.ipynb](swimmer.ipynb)
-- 3B-G: These panels were generated in Adobe Illustrator using the outputs of PhylogicNDT, as well as sample and treatment data for the selected participants.
+- 3B-G: These panels were generated using Adobe Illustrator. The source data were the outputs of PhylogicNDT, as well as sample and treatment data for the selected participants.
 
 ### Figure 4
 - 4A: [comuts_brain_mets.ipynb](comuts_brain_mets.ipynb)

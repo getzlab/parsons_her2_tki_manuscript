@@ -3,6 +3,7 @@ title: "Figure 1C: Pathway point mutation frequency comparison"
 output: html_notebook
 ---
 
+# Setup
 ```{r}
 library(tidyverse)
 library(janitor)
@@ -41,7 +42,7 @@ maf_combined <- bind_rows(maf_paired, maf_unpaired) %>%
   left_join(patient_sheet %>% select(participant_id, Cohort, resistance_type), by = c('Patient_ID' = 'participant_id'))
 ```
 
-Pathway mutation frequency: acquired, intrinsic, pre-TKI, post-TKI
+# Calculate pathway mutation frequencies
 ```{r}
 to_plot_muts <- maf_combined %>%
   mutate(Cohort = factor(case_when(
@@ -68,6 +69,7 @@ to_plot_muts <- maf_combined %>%
 to_plot_muts
 ```
 
+# Plot pathway mutation frequencies
 ```{r}
 plot_mut_freq <- ggbarplot(to_plot_muts, 'gene_set', 'pct_pts_mut',
           color = 'Cohort', fill = 'Cohort', label = TRUE,
@@ -94,7 +96,8 @@ plot_mut_freq
 #        width = 6, height = 8, units = 'in')
 ```
 
-Intrinsic vs. acquired and pre-TKI vs. post-TKI with Fisher's Exact test
+# Compare frequencies
+(intrinsic vs. acquired and pre-TKI vs. post-TKI, with Fisher's Exact test)
 ```{r}
 to_fisher <- to_plot_muts %>% 
   select(-pct_pts_mut, -order_sum) %>% 
@@ -127,4 +130,8 @@ fisher_results <- bind_rows(
 )
 
 fisher_results %>% arrange(p)
+```
+
+```{r}
+sessionInfo()
 ```

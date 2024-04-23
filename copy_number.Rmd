@@ -1,45 +1,41 @@
 ---
-title: "Gene-level CNA analysis"
+title: "Copy number plots"
 output: html_notebook
 ---
 
-We called gene-level CNAs (AMPs, DELs, biallelic inactivations) for the paired
-and unpaired cohorts. Now we want to get a feeling for high-level CN dynamics
-across treatment in the paired cohort, as well as validate any such dynamics to
-the extent possible in the unpaired cohort.
+This notebook generates Figure 2B-D, as well as Supplementary Figures 1 and 2.
+
+# Setup
 ```{r}
 library(tidyverse)
 library(ggpubr)
 library(rstatix)
 ```
 
-Load data
+## Load data
 ```{r}
-sample_sheet_paired <- read_delim('../../results/2024-02-05_cohort-sheets/paired_sample_cohort_sheet.txt',
-                                  show_col_types = FALSE) %>% 
-  group_by(participant_id) %>% 
-  arrange(collection_date_dfd) %>% 
-  mutate(order = 1:n())
-
-sample_sheet_unpaired <- read_delim('../../results/2024-02-05_cohort-sheets/unpaired_sample_cohort_sheet.txt',
+sample_sheet_paired <- read_delim('../results/2024-02-05_cohort-sheets/paired_sample_cohort_sheet.txt',
                                   show_col_types = FALSE)
 
-patient_sheet_paired <- read_delim('../../results/2024-02-05_cohort-sheets/paired_participant_cohort_sheet.txt',
+sample_sheet_unpaired <- read_delim('../results/2024-02-05_cohort-sheets/unpaired_sample_cohort_sheet.txt',
+                                  show_col_types = FALSE)
+
+patient_sheet_paired <- read_delim('../results/2024-02-05_cohort-sheets/paired_participant_cohort_sheet.txt',
                                    show_col_types = FALSE)
 
-patient_sheet_unpaired <- read_delim('../../results/2024-02-05_cohort-sheets/unpaired_participant_cohort_sheet.txt',
+patient_sheet_unpaired <- read_delim('../results/2024-02-05_cohort-sheets/unpaired_participant_cohort_sheet.txt',
                                      show_col_types = FALSE)
 
-cnas_paired <- read_delim('../../results/2024-01-18_gene-cna-calls/cnas_paired_all_annot_ptlevel.tsv',
+cnas_paired <- read_delim('../results/2024-01-18_gene-cna-calls/cnas_paired_all_annot_ptlevel.tsv',
                           show_col_types = FALSE)
 
-cnas_unpaired <- read_delim('../../results/2023-09-28_gene-cna-calls/cnas_unpaired_all_annot_ptlevel.tsv',
+cnas_unpaired <- read_delim('../results/2023-09-28_gene-cna-calls/cnas_unpaired_all_annot_ptlevel.tsv',
                             show_col_types = FALSE)
 
-maf_paired <- read_delim('../../results/2024-02-14_mutations/all_mut_ccfs_maf_bl_geneLists_evidenceLevels.txt',
+maf_paired <- read_delim('../results/2024-02-14_mutations/all_mut_ccfs_maf_bl_geneLists_evidenceLevels.txt',
                          show_col_types = FALSE)
 
-maf_unpaired <- read_delim('../../results/2024-02-12_mutations/all_mut_ccfs_maf_annotated_geneLists_evidenceLevels_unpaired.txt',
+maf_unpaired <- read_delim('../results/2024-02-12_mutations/all_mut_ccfs_maf_annotated_geneLists_evidenceLevels_unpaired.txt',
                          show_col_types = FALSE)
 
 esr1_mut_pts <- maf_paired %>%
@@ -60,14 +56,13 @@ esr1_mut_pts_unpaired <- maf_unpaired %>%
 rm(maf_paired, maf_unpaired)
 ```
 
-ERBB2 CNAP from pre- to post-TKI timepoints
+# Tidy data
 ```{r}
 erbb2_tmp <- cnas_paired %>%
   filter(str_equal(gene, 'ERBB2')) %>% 
   separate_rows(sample, collection_date_dfd, CNAP, cna, sep = ';') %>% 
   mutate(CNAP = as.numeric(CNAP)) %>% 
-  left_join(sample_sheet_paired %>% select(participant_id, collaborator_sample_id, pre_post,
-                                           submitted_material_type, wxs_purity),
+  left_join(sample_sheet_paired %>% select(participant_id, collaborator_sample_id, pre_post, wxs_purity),
             by = c('sample' = 'collaborator_sample_id',
                    'participant_id' = 'participant_id'))
 
@@ -75,58 +70,9 @@ erbb2_tmp_per_pt <- erbb2_tmp %>%
   group_by(participant_id, pre_post) %>%
   summarize(CNAP = mean(CNAP)) %>%
   pivot_wider(names_from = pre_post, values_from = CNAP)
-
-ggboxplot(erbb2_tmp, x = 'pre_post', y = 'CNAP', ylab = 'ERBB2 CNAP',
-          facet.by = 'submitted_material_type') +
-  stat_compare_means()
-
-ggboxplot(erbb2_tmp, x = 'submitted_material_type', y = 'CNAP', ylab = 'ERBB2 CNAP',
-          facet.by = 'pre_post') +
-  stat_compare_means()
-
-paired_cnap_plot <- ggpaired(erbb2_tmp_per_pt %>% drop_na, cond1 = 'Pre', cond2 = 'Post',
-         line.color = 'gray', line.size = 0.5, xlab = 'Timing', point.size = 2) +
-  stat_compare_means(label.y = 100, paired = TRUE, size = 4) +
-  scale_y_continuous(limits = c(-10,110)) +
-  theme_classic(base_size = 16)
-
-paired_cnap_plot <- ggpar(paired_cnap_plot, ylab = bquote(italic('ERBB2')~'CNAP'))
-
-paired_cnap_plot
-
-ggsave(paired_cnap_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired.png',
-       width = 3, height = 3, units = 'in', dpi = 450)
 ```
 
-Does ERBB2 CNAP for a sample correlate with that sample's purity/tumor fraction?
-```{r}
-ggscatter(erbb2_tmp, x = 'wxs_purity', y = 'CNAP', add = 'reg.line', conf.int = TRUE,
-          cor.coef = TRUE, cor.method = 'spearman')
-
-cor.test(formula = ~ CNAP + wxs_purity, data = erbb2_tmp, method = 'spearman')
-```
-
-Does change from pre to post differ significantly by HR status?
-This can be answered with ANCOVA.
-```{r}
-cnap_ancova <- erbb2_tmp_per_pt %>%
-  drop_na %>% 
-  left_join(patient_sheet_paired %>% dplyr::select(participant_id, hr_status),
-            by = 'participant_id') %>% 
-  mutate(ancova_group = if_else(participant_id %in% esr1_mut_pts,
-                                'ESR1 mut', hr_status)) %>% 
-  mutate(ancova_group = factor(ancova_group, levels = c('HR-', 'HR+', 'ESR1 mut')))
-
-# ANCOVA for HR+/HR-
-ancova <- aov(Post ~ Pre + hr_status, data = cnap_ancova)
-Anova(ancova, type = 'III')
-
-# ANCOVA for HR+/HR-/ESR1mut
-ancova <- aov(Post ~ Pre + ancova_group, data = cnap_ancova)
-Anova(ancova, type = 'III')
-```
-
-ERBB2 CNAP in exposed vs. non-exposed
+# Combine data from paired and unpaired cohorts
 ```{r}
 erbb2_unpaired_tmp <- cnas_unpaired %>% 
   filter(str_equal(gene, 'ERBB2')) %>% 
@@ -137,120 +83,6 @@ erbb2_unpaired_tmp <- cnas_unpaired %>%
   summarize(CNAP = mean(CNAP)) %>% 
   left_join(patient_sheet_unpaired, by = 'participant_id')
 
-erbb2_unpaired_tmp_tissue <- cnas_unpaired %>% 
-  filter(str_equal(gene, 'ERBB2')) %>% 
-  separate_rows(CNAP, sample, sep = ';', convert = TRUE) %>% 
-  left_join(sample_sheet_unpaired %>% select(collaborator_sample_id, submitted_material_type),
-            by = c('sample' = 'collaborator_sample_id')) %>% 
-  group_by(participant_id, submitted_material_type) %>% 
-  summarize(CNAP = mean(CNAP)) %>% 
-  left_join(patient_sheet_unpaired, by = 'participant_id')
-
-ggboxplot(erbb2_unpaired_tmp, x = 'Cohort', y = 'CNAP', ylab = 'ERBB2 CNAP') +
-  stat_compare_means()
-
-ggboxplot(erbb2_unpaired_tmp_tissue, x = 'submitted_material_type', y = 'CNAP', ylab = 'ERBB2 CNAP',
-          facet.by = 'Cohort') +
-  stat_compare_means()
-
-ggboxplot(erbb2_unpaired_tmp_tissue, x = 'Cohort', y = 'CNAP', ylab = 'ERBB2 CNAP',
-          facet.by = 'submitted_material_type') +
-  stat_compare_means()
-```
-
-ERBB2 CNAP in paired cohort for ESR1 mutants vs. wt
-```{r}
-# Reference: Pre vs. post, HR- vs. HR+
-hrstatus_plot <- erbb2_tmp_per_pt %>% 
-  drop_na %>% 
-  left_join(patient_sheet_paired, by = 'participant_id') %>% 
-  pivot_longer(cols = c(Pre, Post)) %>% 
-  mutate(name = factor(name, levels = c('Pre', 'Post')),
-         hr_status = factor(hr_status, levels = c('HR-', 'HR+'))) %>%
-  ggboxplot(., x = 'hr_status', y = 'value',
-            facet.by = 'name',
-            line.color = 'gray', line.size = 0.5, ylab = 'ERBB2 CNAP',
-            xlab = 'HR status', add = 'jitter') +
-  stat_compare_means(label.y = 100) +
-  scale_y_continuous(limits = c(-10,110)) +
-  theme_classic(base_size = 16) +
-  theme(strip.background = element_blank())
-
-hrstatus_plot <- ggpar(hrstatus_plot, ylab = bquote(italic('ERBB2')~'CNAP'))
-
-
-# Three groups: HR- wt, HR+ wt, mut
-hrstatus_esrmut_plot <- erbb2_tmp_per_pt %>%
-  drop_na %>% 
-  left_join(patient_sheet_paired, by = 'participant_id') %>% 
-  pivot_longer(cols = c(Pre, Post)) %>% 
-  mutate(name = factor(name, levels = c('Pre', 'Post')),
-         hr_status = factor(hr_status, levels = c('HR-', 'HR+'))) %>%
-  mutate(category = factor(case_when(
-    participant_id %in% esr1_mut_pts ~ 'Mutant',
-    str_equal(hr_status, 'HR+') ~ 'HR+ wt',
-    str_equal(hr_status, 'HR-') ~ 'HR- wt',
-    TRUE ~ NA
-  ), levels = c('HR- wt', 'HR+ wt', 'Mutant'))) %>% 
-  ggboxplot(., x = 'category', y = 'value',
-            facet.by = 'name',
-            line.color = 'gray', line.size = 0.5, add = 'jitter') +
-  stat_compare_means(method = 'wilcox.test',
-                     comparisons = list(c('HR+ wt', 'HR- wt'),
-                                        c('HR+ wt', 'Mutant'),
-                                        c('HR- wt', 'Mutant'))) +
-  theme_classic(base_size = 16) +
-  theme(strip.background = element_blank())
-
-hrstatus_esrmut_plot <- ggpar(hrstatus_esrmut_plot,
-                              xlab = bquote(italic('ESR1')~'category'),
-                              ylab = bquote(italic('ERBB2')~'CNAP'))
-
-# Pre vs. post, yes vs. no
-esrmut_plot <- erbb2_tmp_per_pt %>%
-  drop_na %>%
-  mutate(ESR1_mut = ifelse(participant_id %in% esr1_mut_pts, 'Yes', 'No')) %>%
-  pivot_longer(cols = c(Pre, Post)) %>%
-  mutate(name = factor(name, levels = c('Pre', 'Post'))) %>%
-  ggboxplot(., x = 'ESR1_mut', y = 'value',
-            facet.by = 'name',
-            line.color = 'gray', line.size = 0.5, add = 'jitter') +
-  stat_compare_means(label.y = 100) +
-  scale_y_continuous(limits = c(-10,110)) +
-  theme_classic(base_size = 16) +
-  theme(strip.background = element_blank())
-
-esrmut_plot <- ggpar(esrmut_plot,
-                     xlab = bquote(italic('ESR1')~'mutation'),
-                     ylab = bquote(italic('ERBB2')~'CNAP'))
-
-# Paired pre/post, yes vs. no
-esrmut_paired_plot <- erbb2_tmp_per_pt %>%
-  drop_na %>%
-  mutate(ESR1_mut = ifelse(participant_id %in% esr1_mut_pts, 'Yes', 'No')) %>%
-  ggpaired(., cond1 = 'Pre', cond2 = 'Post',
-           line.color = 'gray', line.size = 0.5,
-           xlab = 'Timing', color = 'ESR1_mut') +
-  theme_classic(base_size = 16) 
-
-esrmut_paired_plot <- ggpar(esrmut_paired_plot,
-                     ylab = bquote(italic('ERBB2')~'CNAP'))
-
-hrstatus_plot
-hrstatus_esrmut_plot
-esrmut_plot
-esrmut_paired_plot
-
-ggsave(hrstatus_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_hrstatus.png',
-       width = 5, height = 3, units = 'in', dpi = 450)
-ggsave(hrstatus_esrmut_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_ESR1_and_HR.png',
-       width = 6, height = 4, units = 'in', dpi = 450)
-ggsave(esrmut_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_ESR1.png',
-       width = 5, height = 3, units = 'in', dpi = 450)
-```
-
-Adding in exposed to post and non-exposed to pre
-```{r}
 esr1_mut_erbb2_cnap_combined <- bind_rows(
 erbb2_unpaired_tmp,
 erbb2_tmp_per_pt %>%
@@ -270,7 +102,56 @@ erbb2_tmp_per_pt %>%
         paired_or_unpaired = ifelse(Cohort %in% c('Pre', 'Post'), 'Paired', 'Unpaired'))
 ```
 
-Faceting by pre/post, comparing HR-/HR+/ESR1mut within pre/post
+# Figure 2B: ERBB2 CNAP from pre- to post-TKI timepoints
+```{r}
+paired_cnap_plot <- ggpaired(erbb2_tmp_per_pt %>% drop_na, cond1 = 'Pre', cond2 = 'Post',
+         line.color = 'gray', line.size = 0.5, xlab = 'Timing', point.size = 2) +
+  stat_compare_means(label.y = 100, paired = TRUE, size = 4) +
+  scale_y_continuous(limits = c(-10,110)) +
+  theme_classic(base_size = 16)
+
+paired_cnap_plot <- ggpar(paired_cnap_plot, ylab = bquote(italic('ERBB2')~'CNAP'))
+
+paired_cnap_plot
+
+# ggsave(paired_cnap_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired.png',
+#        width = 3, height = 3, units = 'in', dpi = 450)
+```
+
+Does ERBB2 CNAP for a sample correlate with that sample's purity/tumor fraction?
+```{r}
+ggscatter(erbb2_tmp, x = 'wxs_purity', y = 'CNAP', add = 'reg.line', conf.int = TRUE,
+          cor.coef = TRUE, cor.method = 'spearman')
+
+cor.test(formula = ~ CNAP + wxs_purity, data = erbb2_tmp, method = 'spearman')
+```
+
+# Figure 2C: Pre-TKI ERBB2 CNAP by resistance type
+```{r}
+resistance_type_cnap_plot <- erbb2_tmp_per_pt %>%
+  select(participant_id, Pre) %>% 
+  drop_na %>% 
+  left_join(patient_sheet_paired, by = 'participant_id') %>% 
+  ungroup %>% 
+  ggboxplot(., x = 'resistance_type', y = 'Pre',
+            line.size = 0.5, add = 'jitter',
+            add.params = list(size = 2),
+            xlab = 'Resistance type',
+            outlier.shape = NA) +
+  theme_classic(base_size = 16) +
+  stat_compare_means(method = 'wilcox.test', size = 4, label.y = 70)
+
+resistance_type_cnap_plot <- ggpar(resistance_type_cnap_plot,
+                                   ylab = bquote('Pre-TKI'~italic('ERBB2')~'CNAP'))
+
+resistance_type_cnap_plot
+
+# ggsave(resistance_type_cnap_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_resistance_type_pre.png',
+#        width = 4, height = 4.5, units = 'in', dpi = 450)
+```
+
+# Figure 2D: ERBB2 CNAP by HR status and ESR1 mutation status
+(combining the paired and unpaired cohorts)
 ```{r}
 hrstatus_esrmut_combined_plot <- ggboxplot(esr1_mut_erbb2_cnap_combined %>% 
                                              filter(!is.na(esr1_category)), x = 'esr1_category', y = 'CNAP',
@@ -295,120 +176,14 @@ hrstatus_esrmut_combined_plot <- ggpar(hrstatus_esrmut_combined_plot,
                                        ylab = bquote(italic('ERBB2')~'CNAP'))
 
 hrstatus_esrmut_combined_plot$layers[[3]]$aes_params$textsize <- 4
+
 hrstatus_esrmut_combined_plot
 
-ggsave(hrstatus_esrmut_combined_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_and_unpaired_by_ESR1_and_HR.png',
-       width = 6, height = 5, units = 'in', dpi = 450)
+# ggsave(hrstatus_esrmut_combined_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_and_unpaired_by_ESR1_and_HR.png',
+#        width = 6, height = 5, units = 'in', dpi = 450)
 ```
 
-Pre vs. post in just HR- participants, across cohorts
-```{r}
-erbb2_cnap_combined_hrneg <- esr1_mut_erbb2_cnap_combined %>%
-                                  filter(str_equal(esr1_category, 'HR- wt')) %>% 
-  mutate(paired_or_unpaired = paste('HR- ESR1wt', paired_or_unpaired))
-
-hrneg_prepost_plot <- ggboxplot(erbb2_cnap_combined_hrneg,
-            x = 'group', y = 'CNAP',
-            palette = 'npg',
-            facet.by = 'paired_or_unpaired',
-            line.color = 'gray', line.size = 0.5,
-            outlier.shape = NA) +
-  geom_point(aes(shape = paired_or_unpaired),
-             position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.9),
-             size = 2) +
-  stat_compare_means(method = 'wilcox.test') +
-  theme_classic(base_size = 16) +
-  theme(strip.background = element_blank(),
-        legend.position = c(0.85, 0.75))
-
-hrneg_prepost_plot <- ggpar(hrneg_prepost_plot,
-                           legend.title = 'Cohort',
-                           xlab = 'Timing',
-                           ylab = bquote(italic('ERBB2')~'CNAP'))
-
-hrneg_prepost_plot$layers[[3]]$aes_params$textsize <- 4
-hrneg_prepost_plot
-
-ggsave(hrneg_prepost_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_and_unpaired_HRneg.png',
-       width = 8, height = 5, units = 'in', dpi = 450)
-```
-
-Pre vs. post in just the unpaired cohort by the three ESR1 categories
-```{r}
-esr1_mut_erbb2_cnap_unpaired <- esr1_mut_erbb2_cnap_combined %>% 
-  filter(str_equal(paired_or_unpaired, 'Unpaired')) %>% 
-  mutate(group_abbr = sub('-.*', '', group))
-
-hrstatus_esrmut_unpaired_plot <- ggboxplot(esr1_mut_erbb2_cnap_unpaired, x = 'group_abbr', y = 'CNAP',
-            facet.by = 'esr1_category',
-            line.color = 'gray', line.size = 0.5, add = 'jitter',
-            add.params = list(size = 4),
-            outlier.shape = NA) +
-  stat_compare_means(method = 'wilcox.test') +
-  theme_classic(base_size = 16) +
-  theme(strip.background = element_blank())
-
-hrstatus_esrmut_unpaired_plot <- ggpar(hrstatus_esrmut_unpaired_plot,
-                                       xlab = 'Timing',
-                                       ylab = bquote(italic('ERBB2')~'CNAP'),
-                                       title = bquote('Unpaired cohort by'~italic('ESR1')~'status'))
-
-hrstatus_esrmut_unpaired_plot$layers[[3]]$aes_params$textsize <- 8
-hrstatus_esrmut_unpaired_plot
-
-# ggsave(hrstatus_esrmut_unpaired_plot, filename = '../../results/2023-11-10_various-plots/ERBB2_cnap_unpaired_by_ESR1_and_HR.png',
-#        width = 8, height = 4, units = 'in', dpi = 450)
-```
-
-Pre-tx ERBB2 CNAP: predictive of time on TKI?
-```{r}
-resistance_type_cnap_plot <- erbb2_tmp_per_pt %>%
-  select(participant_id, Pre) %>% 
-  drop_na %>% 
-  left_join(patient_sheet_paired, by = 'participant_id') %>% 
-  ungroup %>% 
-  ggboxplot(., x = 'resistance_type', y = 'Pre',
-            line.size = 0.5, add = 'jitter',
-            add.params = list(size = 2),
-            xlab = 'Resistance type',
-            outlier.shape = NA) +
-  theme_classic(base_size = 16) +
-  stat_compare_means(method = 'wilcox.test', size = 4, label.y = 70)
-
-resistance_type_cnap_plot <- ggpar(resistance_type_cnap_plot,
-                                   ylab = bquote('Pre-TKI'~italic('ERBB2')~'CNAP'))
-
-resistance_type_cnap_plot
-
-ggsave(resistance_type_cnap_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_resistance_type_pre.png',
-       width = 4, height = 4.5, units = 'in', dpi = 450)
-```
-
-Post-TKI?
-```{r}
-resistance_type_cnap_plot_post <- erbb2_tmp_per_pt %>%
-  select(participant_id, Post) %>% 
-  drop_na %>% 
-  left_join(patient_sheet_paired, by = 'participant_id') %>% 
-  ungroup %>% 
-  ggboxplot(., x = 'resistance_type', y = 'Post',
-            line.size = 0.5, add = 'jitter',
-            add.params = list(size = 4),
-            xlab = 'Resistance type',
-            outlier.shape = NA) +
-  theme_classic(base_size = 16) +
-  stat_compare_means(method = 'wilcox.test', size = 4)
-
-resistance_type_cnap_plot_post <- ggpar(resistance_type_cnap_plot_post,
-                                   ylab = bquote('Post-TKI'~italic('ERBB2')~'CNAP'))
-
-resistance_type_cnap_plot_post
-
-ggsave(resistance_type_cnap_plot_post, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_resistance_type_post.png',
-       width = 4, height = 4.5, units = 'in', dpi = 450)
-```
-
-
+# Figure 2B-D, combined
 ```{r}
 manuscript_panels <- ggarrange(paired_cnap_plot,
                          resistance_type_cnap_plot,
@@ -418,7 +193,61 @@ manuscript_panels <- ggarrange(paired_cnap_plot,
 
 manuscript_panels
 
-ggsave(manuscript_panels, filename = '../../results/2024-03-22_cna-plots/Fig2_BCD.pdf',
-       width = 14, height = 4.2, units = 'in')
+# ggsave(manuscript_panels, filename = '../../results/2024-03-22_cna-plots/Fig2_BCD.pdf',
+#        width = 14, height = 4.2, units = 'in')
 ```
 
+# Supplementary Figure 1: ERBB2 CNAP by HR status
+```{r}
+# Reference: Pre vs. post, HR- vs. HR+
+hrstatus_plot <- erbb2_tmp_per_pt %>% 
+  drop_na %>% 
+  left_join(patient_sheet_paired, by = 'participant_id') %>% 
+  pivot_longer(cols = c(Pre, Post)) %>% 
+  mutate(name = factor(name, levels = c('Pre', 'Post')),
+         hr_status = factor(hr_status, levels = c('HR-', 'HR+'))) %>%
+  ggboxplot(., x = 'hr_status', y = 'value',
+            facet.by = 'name',
+            line.color = 'gray', line.size = 0.5, ylab = 'ERBB2 CNAP',
+            xlab = 'HR status', add = 'jitter') +
+  stat_compare_means(label.y = 100) +
+  scale_y_continuous(limits = c(-10,110)) +
+  theme_classic(base_size = 16) +
+  theme(strip.background = element_blank())
+
+hrstatus_plot <- ggpar(hrstatus_plot, ylab = bquote(italic('ERBB2')~'CNAP'))
+
+hrstatus_plot
+
+# ggsave(hrstatus_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_hrstatus.png',
+#        width = 5, height = 3, units = 'in', dpi = 450)
+```
+
+# Supplementary Figure 2: ERBB2 CNAP by ESR1 mutation status
+```{r}
+esrmut_plot <- erbb2_tmp_per_pt %>%
+  drop_na %>%
+  mutate(ESR1_mut = ifelse(participant_id %in% esr1_mut_pts, 'Yes', 'No')) %>%
+  pivot_longer(cols = c(Pre, Post)) %>%
+  mutate(name = factor(name, levels = c('Pre', 'Post'))) %>%
+  ggboxplot(., x = 'ESR1_mut', y = 'value',
+            facet.by = 'name',
+            line.color = 'gray', line.size = 0.5, add = 'jitter') +
+  stat_compare_means(label.y = 100) +
+  scale_y_continuous(limits = c(-10,110)) +
+  theme_classic(base_size = 16) +
+  theme(strip.background = element_blank())
+
+esrmut_plot <- ggpar(esrmut_plot,
+                     xlab = bquote(italic('ESR1')~'mutation'),
+                     ylab = bquote(italic('ERBB2')~'CNAP'))
+
+esrmut_plot
+
+# ggsave(esrmut_plot, filename = '../../results/2024-03-22_cna-plots/ERBB2_cnap_paired_by_ESR1.png',
+#        width = 5, height = 3, units = 'in', dpi = 450)
+```
+
+```{r}
+sessionInfo()
+```
