@@ -3,13 +3,48 @@ This repository contains supplementary code for the Parsons et al. manuscript:
 
 _Genomic mechanisms of resistance to tyrosine kinase inhibitors in HER2 amplified breast cancer. Parsons et al. 2024_
 
+The Jupyter and RMarkdown notebooks in this repository generate the figures shown in the manuscript. 
+
 For questions about the code in this repository, please reach out to David Merrell (merrell@broadinstitute.org).
 
-## Contents
 
-## Installing dependencies
+# How to reproduce manuscript figures
 
-## How to reproduce manuscript figures
+## Clone this repository
+
+`$ git clone git@github.com:getzlab/parsons_her2_tki_manuscript.git`
+
+For the remainder of this document, we assume you've `cd`'d into this directory:
+
+`$ cd parsons_her2_tki_manuscript.git`
+
+## Install dependencies
+
+We recommend installing [Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/) and [creating a conda environment using the `config.yaml`](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) in this directory.
+
+`$ conda env create -f environment.yml`
+
+## Download data from Zenodo
+
+Data for this repository is stored on Zenodo:
+
+TODO ADD ZENODO REPOSITORY URL
+
+Download the tarball `parsons_her2_tki_data.tar.gz` and unpack it in this directory:
+
+`$ tar -xvzf parsons_her2_tki_data.tar.gz`
+
+At this point, there should be a subdirectory called `data` containing several files:
+```
+$ ls data/
+all_mut_ccfs_maf_bl_geneLists_evidenceLevels.pkl
+cnas_paired_all_annot_ptlevel.tsv
+[...]
+```
+
+You are now ready to run the notebooks and reproduce the figures.
+
+## Run the notebooks
 
 ### Figure 1
 - 1A: This panel was generated using Microsoft PowerPoint (**TODO: cite BioRender for images?**)
