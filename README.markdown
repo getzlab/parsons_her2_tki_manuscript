@@ -1,7 +1,7 @@
 
 This repository contains supplementary code for the Parsons et al. manuscript:
 
-_Genomic mechanisms of resistance to tyrosine kinase inhibitors in HER2 amplified breast cancer._ Parsons et al. 2024
+_Genomic mechanisms of resistance to tyrosine kinase inhibitors in HER2 amplified breast cancer._ Parsons et al. 2024 (in submission)
 
 The Jupyter and RMarkdown notebooks in this repository generate the figures shown in the manuscript. 
 
@@ -19,9 +19,13 @@ For the remainder of this document, we assume you've `cd`'d into this directory:
 
 ## Install dependencies
 
-We recommend installing [Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/) and [creating a conda environment using the `config.yaml`](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) in this directory.
+**Python dependencies.** We recommend installing [Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/) and [creating a conda environment using the `config.yaml`](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) in this directory.
 
 `$ conda env create -f environment.yml`
+
+**R dependencies.** See `R_dependencies.txt` for a list of R packages and versions used in the RMarkdown notebooks.
+
+[We recommend running the RMarkdown notebooks in RStudio.](https://posit.co/download/rstudio-desktop/)
 
 ## Download data from Zenodo
 
