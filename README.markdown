@@ -56,7 +56,7 @@ Here we list the figures and the notebooks that generate them.
 [See this information about running RMarkdown notebooks.](https://bookdown.org/yihui/rmarkdown/notebook.html)
 
 ### Figure 1
-- 1A: This panel was generated using Microsoft PowerPoint (**TODO: cite BioRender for images?**)
+- 1A: This panel was generated using Microsoft PowerPoint and images downloaded from [BioRender.com](BioRender.com).
 - 1B: [comuts.ipynb](comuts.ipynb)
 - 1C: [pathways.Rmd](pathways.Rmd)
 
@@ -70,7 +70,7 @@ Here we list the figures and the notebooks that generate them.
 
 ### Figure 4
 - 4A: [comuts_brain_mets.ipynb](comuts_brain_mets.ipynb)
-- 4B: This panel was generated using PathwayMapper[^1] 
+- 4B: This panel was generated using PathwayMapper[^1].
 
 ### Supplementary Figure 1
 - [copy_number.Rmd](copy_number.Rmd)
