@@ -21,7 +21,7 @@ For the remainder of this document, we assume you've `cd`'d into this directory:
 
 **Python dependencies.** We recommend installing [Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/) and [creating a conda environment using the `config.yaml`](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) in this directory.
 
-`$ conda env create -f environment.yml`
+`$ conda env create -f config.yaml`
 
 **R dependencies.** See `R_dependencies.txt` for a list of R packages and versions used in the RMarkdown notebooks.
 
